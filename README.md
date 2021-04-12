@@ -1,4 +1,11 @@
-# tarea15
+# Proyecto2Estructura
 
-## Autor
-- <Dante Fana Badia>20156079@ce.pucmm.edu.do
+## Participantes:
+
+- Dante Faña Badia - 2015-6079
+- Lorna Flerida Espinosa Cuello - 2014-5845
+
+## Como correrlo:
+
+```shell
+```
