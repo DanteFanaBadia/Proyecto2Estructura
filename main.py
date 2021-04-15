@@ -90,7 +90,7 @@ class SocialNetwork:
         return self.userSequence
 
     def _re_init_username_db(self):
-        self.usernameDb = BloomFilter(len(self.userDb))
+        self.usernameDb = BloomFilter(1000000)
         for user in self.userDb:
             self.usernameDb.insert(user.username)
 
