@@ -2,3 +2,4 @@ coverage==5.4
 HeapDict~=1.0.1
 mmh3
 bitarray
+Faker

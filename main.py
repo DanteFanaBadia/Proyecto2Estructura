@@ -52,7 +52,7 @@ class User:
         return f"{self.id}, {self.name}, {self.username}"
 
     def __hash__(self):
-        return hash((self.id, self.username, self.name))
+        return hash(self.username)
 
 
 class Parentesco(enum.Enum):
@@ -97,9 +97,10 @@ class SocialNetwork:
         self.userDb.append(user)
         quick_sort(self.userDb, 0, len(self.userDb) - 1)
         self._re_init_username_db()
+        return user
 
-    def friend(self, user1: User, user2: User):
-        self.graph.add_edge(user1.id, user2.id)
+    def friend(self, user1_id: int, user2_id: int):
+        self.graph.add_edge(user1_id, user2_id)
 
     def usuario_disponible(self, nombre_usario: str) -> bool:
         """
@@ -107,8 +108,15 @@ class SocialNetwork:
         Tomar en cuenta que la cantidad de usarios es muy grande y podría ser que no quepa en la RAM
         :param nombre_usario:
         :return:
+        :explanation:
+            Se eligio esta implementación porque nos permite una velocidad mayor a las de una búsqueda simple y nos
+            permita tener un O(k)
+            - pros: tiene una velocidad menor a otros tipo de búsqueda.
+            - cons: puede darnos falso positivo o sea que nos indica que el usuario existe cuando no es cierto, consume
+                mucho mas memoria y tiene que crearse cada vez se inserte un nuevo elemento.
         """
-        return not self.usernameDb.search(nombre_usario)
+        result = self.usernameDb.search(nombre_usario)
+        return not result
 
     def parentesco(self, id_persona1: int, id_persona2: int) -> Parentesco:
         """
@@ -118,9 +126,16 @@ class SocialNetwork:
         :param id_persona1:
         :param id_persona2:
         :return:
+        :explanation:
+            Se utiliza DFS para poder hacer un análisis de la red
+            - pros: Solo se recorre hasta encontrar el path que une a los dos nodos.
+            - cons: Este necesita recorrer toda la red partiendo de un nodo asi que siempre tendría una velocidad
+                O(V + E)
+                Almacenamos informaciones no utilizadas para identificar el parentesco como por ejemplo los vertices
+                visitados
         """
         result = self.graph.distance(id_persona1, id_persona2)
-        if result is not None or result > Parentesco.primo_cuarto:
+        if result is not None and result <= Parentesco.primo_cuarto.value:
             return Parentesco(self.graph.distance(id_persona1, id_persona2))
         return Parentesco.no_contemplado
 
@@ -133,6 +148,12 @@ class SocialNetwork:
         :param id_persona1:
         :param id_persona2:
         :return:
+        :explanation:
+            Se utiliza DFS para poder hacer un análisis de la red
+            - pros: Solo se recorre hasta encontrar el path que une a los dos nodos.
+            - cons: Este necesita recorrer toda la red partiendo de un nodo asi que siempre tendría una velocidad
+                O(V + E), tenemos que recorrer todos los vertices y almacenar los mismo para no tomarlo en cuenta por lo tanto
+            consume muchos espacio para grandes reeds O(V)
         """
         return self.graph.distance(id_persona1, id_persona2)
 
@@ -142,6 +163,12 @@ class SocialNetwork:
         :param id_persona:
         :param distancia_maxima: la cantidad de nodos que se deben brincar para llegar a otro nodo
         :return:
+        :explanation:
+            Se utiliza DFS para poder hacer un análisis de la red
+            - pros: tenemos que recorrer todos los vertices y almacenar los mismo para no tomarlo en cuenta por lo tanto
+            consume muchos espacio para grandes reeds O(V)
+            - cons: Este necesita recorrer toda la red partiendo de un nodo asi que siempre tendría una velocidad
+                O(V + E)
         """
         return self.graph.network_count(id_persona, distancia_maxima)
 
@@ -150,6 +177,11 @@ class SocialNetwork:
         Buscar una persona por nombre y retornar su id
         :param nombre:
         :return: id_persona
+        :explanation:
+            Se utiliza binary search para poder asegurar un tiempo menor a O(n)
+            - pros: para poder hacer un binary search debemos organizar el listado en inserción dándonos un tiempo de
+                O(n log n)
+            - cons: este es el search mas rapido que podemos hacer por nombre asegurando un tiempo O(log n)
         """
         user = binary_search(self.userDb, 0, len(self.userDb) - 1, nombre, 'name')
         if user is not None:
@@ -160,54 +192,69 @@ class SocialNetwork:
 def main():
     sn = SocialNetwork()
     option = None
-    while option is None or option != 7:
-        print("""
-    1. Agregar usuario
-    2. Buscar usuario (por nombre)
-    3. Obtener tamaño de la red (id usuario)
-    4. Obtener distancia entre amigos (id usuario 1,id usuario 2)
-    5. Obtener parentesco entre amigos (id usuario 1,id usuario 2)
-    6. Validar nombre de usuario (nombre de usuario)
-    7. Salir 
-        """)
-        raw_option = input("Elegir una opción: ")
+    while option is None or option != 8:
+        try:
+            print("""
+        1. Agregar usuario
+        2. Hacer amigos dos usuarios (id usuario 1,id usuario 2) 
+        3. Buscar usuario (por nombre)
+        4. Obtener tamaño de la red (id usuario)
+        5. Obtener distancia entre amigos (id usuario 1,id usuario 2)
+        6. Obtener parentesco entre amigos (id usuario 1,id usuario 2)
+        7. Validar nombre de usuario (nombre de usuario)
+        8. Salir 
+            """)
+            raw_option = input("Elegir una opción: ")
 
-        if not raw_option.isdigit() or int(raw_option) not in (1, 2, 3, 4, 5, 6, 7):
-            print(f"{WARNING}Error: opción inválida{END}")
-            continue
-
-        option = int(raw_option)
-
-        if option == 1:
-            name, username = str(input("Ingrese nombre y nombre de usuario (nombre,nombre de usuario): ")).split(',')
-            if not sn.usuario_disponible(username):
-                print(f"{WARNING}Error: usuario no disponible{END}")
+            if not raw_option.isdigit() or int(raw_option) not in (1, 2, 3, 4, 5, 6, 7):
+                print(f"{WARNING}Error: opción inválida{END}")
                 continue
-            sn.insertar(User(username=username, name=name))
 
-        if option == 2:
-            term = str(input("Ingresar nombre: "))
-            user = sn.buscar_por_nombre(term)
-            print(f"Usuario: {user}")
+            option = int(raw_option)
 
-        if option == 3:
-            id_user, max_distance = str(input("Ingrese id y maxima distancia(id,maxima distancia): "))
-            print(f"Tamaño de la red: {sn.tamano_red_de_familia(int(id_user), int(max_distance))}")
+            if option == 1:
+                name, username = input("Ingrese nombre y nombre de usuario (nombre,nombre de usuario): ").split(',')
+                if not sn.usuario_disponible(username):
+                    print(f"{WARNING}Error: usuario no disponible{END}")
+                    continue
+                user = sn.insertar(User(username=username, name=name))
+                print(f"Usuario creado: {user}")
 
-        if option == 4:
-            id_user1, id_user2 = str(input("Ingrese id de usuarios (id1,id2): ")).split(',')
-            print(f"Distancia entre amigos: {sn.distancia_de_amigos(int(id_user1), int(id_user2))}")
+            if option == 2:
+                raw_input = input("Ingrese id de usuarios (id1,id2): ")
+                id_user1, id_user2 = raw_input.split(',')
+                sn.friend(id_user1, id_user2)
+                print(f"Usuarios fueron relacionados: {id_user1}, {id_user2}")
 
-        if option == 5:
-            id_user1, id_user2 = str(input("Ingrese id de usuarios (id1,id2): ")).split(',')
-            print(f"Parentesco de usuario: {sn.parentesco(int(id_user1), int(id_user2))}")
+            if option == 3:
+                term = input("Ingresar nombre: ")
+                user = sn.buscar_por_nombre(term)
+                print(f"Id del usuario: {user}")
 
-        if option == 6:
-            username = str(input("Ingrese nombre de usuario: "))
-            if sn.usuario_disponible(username):
-                print(f"El usuario {username} esta disponible")
-            else:
-                print(f"El usuario {username} no esta disponible")
+            if option == 4:
+                raw_input = input("Ingrese id y maxima distancia(id,maxima distancia): ")
+                id_user, max_distance = raw_input.split(',')
+                print(f"Tamaño de la red: {sn.tamano_red_de_familia(int(id_user), int(max_distance))}")
+
+            if option == 5:
+                raw_input = input("Ingrese id de usuarios (id1,id2): ")
+                id_user1, id_user2 = raw_input.split(',')
+                print(f"Distancia entre amigos: {sn.distancia_de_amigos(int(id_user1), int(id_user2))}")
+
+            if option == 6:
+                raw_input = input("Ingrese id de usuarios (id1,id2): ")
+                id_user1, id_user2 = raw_input.split(',')
+                print(f"Parentesco de usuario: {sn.parentesco(int(id_user1), int(id_user2))}")
+
+            if option == 7:
+                username = input("Ingrese nombre de usuario: ")
+                if sn.usuario_disponible(username):
+                    print(f"El usuario {username} esta disponible")
+                else:
+                    print(f"El usuario {username} no esta disponible")
+        except Exception as error:
+            print(f"{error}")
+            continue
 
 
 if __name__ == "__main__":
