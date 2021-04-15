@@ -19,6 +19,8 @@ from utilities.bloomfilter import BloomFilter
 from utilities.graph import Graph
 from utilities.quicksort import quick_sort
 from utilities.binarysearch import binary_search
+from faker import Faker
+fake = Faker()
 
 WARNING = '\033[93m'
 END = '\033[0m'
@@ -191,6 +193,11 @@ class SocialNetwork:
 
 def main():
     sn = SocialNetwork()
+    for name in range(1, 100):
+        name = fake.name()
+        username = name.replace(" ", "_").lower()
+        sn.insertar(User(username=username, name=name))
+
     option = None
     while option is None or option != 8:
         try:
@@ -206,7 +213,7 @@ def main():
             """)
             raw_option = input("Elegir una opción: ")
 
-            if not raw_option.isdigit() or int(raw_option) not in (1, 2, 3, 4, 5, 6, 7):
+            if not raw_option.isdigit() or int(raw_option) not in (1, 2, 3, 4, 5, 6, 7, 8):
                 print(f"{WARNING}Error: opción inválida{END}")
                 continue
 
@@ -214,16 +221,13 @@ def main():
 
             if option == 1:
                 name, username = input("Ingrese nombre y nombre de usuario (nombre,nombre de usuario): ").split(',')
-                if not sn.usuario_disponible(username):
-                    print(f"{WARNING}Error: usuario no disponible{END}")
-                    continue
                 user = sn.insertar(User(username=username, name=name))
                 print(f"Usuario creado: {user}")
 
             if option == 2:
                 raw_input = input("Ingrese id de usuarios (id1,id2): ")
                 id_user1, id_user2 = raw_input.split(',')
-                sn.friend(id_user1, id_user2)
+                sn.friend(int(id_user1), int(id_user2))
                 print(f"Usuarios fueron relacionados: {id_user1}, {id_user2}")
 
             if option == 3:
