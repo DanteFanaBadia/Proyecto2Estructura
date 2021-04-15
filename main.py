@@ -181,9 +181,9 @@ class SocialNetwork:
         :return: id_persona
         :explanation:
             Se utiliza binary search para poder asegurar un tiempo menor a O(n)
-            - pros: para poder hacer un binary search debemos organizar el listado en inserción dándonos un tiempo de
-                O(n log n)
-            - cons: este es el search mas rapido que podemos hacer por nombre asegurando un tiempo O(log n)
+            - pros: este es el search mas rápida que podemos hacer por nombre asegurando un tiempo O(log n)
+            - cons: para poder hacer un binary search debemos organizar el listado en inserción dándonos un tiempo de
+                O(n^2) en el peor de los casos
         """
         user = binary_search(self.userDb, 0, len(self.userDb) - 1, nombre, 'name')
         if user is not None:
